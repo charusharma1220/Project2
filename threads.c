@@ -21,10 +21,15 @@ struct thread *thread_create(void (*f)(void *arg), void *arg){
 	struct thread newThread=posix_memalign(8, STACKSIZE);
 	newThread->prev=NULL;
 	newThread->next=NULL;
-	newThread->esp=STACKSIZE;
-	newThread->ebp=;
+	newThread->esp=&newThread;
+	newThread->ebp=NULL;
 }
-void thread_add_runqueue(struct thread *t);
+void thread_add_runqueue(struct thread *t){
+	struct thread* current_thread=*t;
+	struct thread* last_thread=current_thread->prev;
+	current_thread->next=last_thread->next;
+	last_thread->next=current_thread;
+}
 void thread_yield(void);
 void dispatch(void);
 void schedule(void);

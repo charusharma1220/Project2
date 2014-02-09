@@ -1,8 +1,7 @@
 #ifndef THREADS_H_
 #define THREADS_H_
+#define STACKSIZE 4096
 
-
-#define STACKSIZE 4096;
 struct thread;
 
 struct thread *thread_create(void (*f)(void *arg), void *arg);

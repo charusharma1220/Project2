@@ -6,14 +6,17 @@
  */
 #include "threads.h"
 #define NULL 0
+#include <setjmp.h>
 #define STACKSIZE 262144
 
 struct thread{
 	int threadid;
 	void *arg;
 	void (*f)(void *arg);
+	int first_time;
 	unsigned char *esp;
 	unsigned char *ebp;
+	jmp_buf buf;
 	unsigned char* stack;
 	struct thread* prev;
 	struct thread* next;

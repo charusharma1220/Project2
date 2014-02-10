@@ -1,19 +1,21 @@
 #ifndef THREADS_H_
 #define THREADS_H_
+#define STACKSIZE 4096
+
 #ifndef NULL
 #define NULL 0
 #endif
 
 #include <stdlib.h>
 
-#define STACKSIZE sizeof(4096)
 //#define STACKSIZE size_t 4096
+#define STACKSIZE 4096
 
 struct thread{
 	int threadid;
 	void* f;
-	unsigned char *esp;
-	unsigned char *ebp;
+	unsigned int *esp;
+	unsigned int *ebp;
 	struct thread* prev;
 	struct thread* next;
 };

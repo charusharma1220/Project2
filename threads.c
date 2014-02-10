@@ -105,7 +105,7 @@ void thread_exit(void)
 	struct thread* saved_thread=current_thread;
 	if (current_thread==NULL){
 		printf("All threads have terminated.\n");
-		exit();
+		exit(0);
 	}
 	current_thread->stack=(unsigned char*)(((int)current_thread->stack)-STACKSIZE);
 	free(saved_thread);

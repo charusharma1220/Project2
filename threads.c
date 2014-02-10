@@ -46,9 +46,37 @@ void thread_add_runqueue(struct thread *t){
 		last_thread=t;
 	}
 }
-void thread_yield(void);
+void thread_yield(void){
+	if (!set_jmp(current_thread->buf)){
+		__asm __volatile("mov %%esp, %%eax" : "=a" (current_thread->esp) : );
+		__asm __volatile("mov %%ebp, %%eax" : "=a" (current_thread->ebp) : );
+		schedule();
+		dispatch();
+	}
+	else{
+		return;
+	}
+}
 void dispatch(void);
-void schedule(void);
+void schedule(void){
+	if (first_thread==NULL){
+		printf("No more threads to schedule");
+		return;
+	}
+	if (current_thread->next==NULL){
+		current_thread=first_thread;
+		return;
+	}
+	current_thread=current_thread->next;
+}
 void thread_exit(void);
-void thread_start_threading(void);
+void thread_start_threading(void){
+	current_thread=first_thread;
+	if (current_thread==NULL){
+		printf("There are no threads to schedule.\n");
+		exit();
+	}
+	while (current_thread!=NULL)
+		dispatch();
+}
 

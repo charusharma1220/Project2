@@ -102,6 +102,15 @@ void thread_exit(void)
 		first_thread=current_thread->next;
 	if (current_thread->next==NULL)
 		last_thread=current_thread->prev;
+	struct thread* saved_thread=current_thread;
+	if (current_thread==NULL){
+		printf("All threads have terminated.\n");
+		exit();
+	}
+	current_thread->stack=(unsigned char*)(((int)current_thread->stack)-STACKSIZE);
+	free(saved_thread);
+	schedule();
+	dispatch();
 }
 
 void thread_start_threading(void)

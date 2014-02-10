@@ -1,31 +1,15 @@
 #ifndef THREADS_H_
 #define THREADS_H_
-#define STACKSIZE 4096
 
-#ifndef NULL
-#define NULL 0
-#endif
-
-#include <stdlib.h>
-
-//#define STACKSIZE size_t 4096
-#define STACKSIZE 4096
-
-struct thread{
-	int threadid;
-	void* f;
-	unsigned int *esp;
-	unsigned int *ebp;
-	struct thread* prev;
-	struct thread* next;
-};
-
-struct thread* thread_create(void (*f)(void *arg), void *arg);
+struct thread;
+struct thread *thread_create(void (*f)(void *arg), void *arg);
 void thread_add_runqueue(struct thread *t);
 void thread_yield(void);
 void dispatch(void);
 void schedule(void);
 void thread_exit(void);
 void thread_start_threading(void);
+
+#endif // THREADS_Hding(void);
 
 #endif // THREADS_H

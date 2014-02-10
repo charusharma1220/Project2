@@ -52,6 +52,8 @@ int main(int argc, char **argv)
     thread_add_runqueue(t3);
 
     thread_start_threading();
+
+    thread_start_threading();     //DEBUG: corner case
     printf("\nexited\n");
     return 0;
 }

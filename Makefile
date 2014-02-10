@@ -1,6 +1,7 @@
 	# Variables #
 CC = gcc		#gcc/g++
 CFLAGS = -Wall
+DEBUG_FLAGS = -g
 INCLUDE =
 LIBDIR =
 LIBS =
@@ -16,6 +17,8 @@ ifeq ($(UNAME), Darwin)
   LIBS =
 endif
 
+debug: $(allo)
+	${CC} ${CFLAGS} ${DEBUG_FLAGS} $(INCLUDE) -o Threads $(allo) ${LIBDIR} ${LIBS}
 Threads: $(allo)
 	${CC} ${CFLAGS} $(INCLUDE) -o Threads $(allo) ${LIBDIR} ${LIBS}
 main.o: main.c threads.o threads.h
@@ -24,4 +27,3 @@ threads.o: threads.c threads.h
 	${CC} -c ${CFLAGS} $(INCLUDE) threads.c
 clean: 
 	rm $(allo)
-	rm Threads

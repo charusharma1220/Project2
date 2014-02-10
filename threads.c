@@ -5,21 +5,46 @@
  *      Author: Charu
  */
 #include "threads.h"
+#define NULL 0
+#define STACKSIZE 262144
+
+struct thread{
+	int threadid;
+	void *arg;
+	void (*f)(void *arg);
+	unsigned char *esp;
+	unsigned char *ebp;
+	unsigned char* stack;
+	struct thread* prev;
+	struct thread* next;
+};
+
+typedef struct thread thread;
+
+struct thread* first_thread=NULL;
+struct thread* last_thread=NULL;
+struct thread* current_thread=NULL;
 
 struct thread* thread_create(void (*f)(void *arg), void *arg){
 	struct thread* newThread;
-        newThread = aligned_alloc(sizeof(char), STACKSIZE);
+	newThread=aligned_alloc(8, sizeof(thread));
+        newThread->stack=aligned_alloc(8,STACKSIZE);
 	newThread->prev = NULL;
 	newThread->next = NULL;
-	newThread->esp = newThread;
-	newThread->ebp = NULL;
+	newThread->arg=arg;
+	newThread->f=f;
         return newThread;
 }
 void thread_add_runqueue(struct thread *t){
-	struct thread* current_thread = t;
-	struct thread* last_thread = current_thread->prev;
-	current_thread->next = last_thread->next;
-	last_thread->next = current_thread;
+	if (first_thread==NULL){
+		first_thread=t;
+		last_thread=t;
+	}
+	else{
+		t->prev=last_thread;
+		last_thread->next=t;
+		last_thread=t;
+	}
 }
 void thread_yield(void);
 void dispatch(void);

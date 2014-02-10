@@ -65,8 +65,21 @@ void thread_yield(void)
 }
 void dispatch(void)
 {
-
+	if (current_thread==NULL){
+		printf("No threads to dispatch");
+		exit(0);
+	}
+	if (current_thread->first_time){
+		current_thread->first_time=0;
+		__asm __volatile("mov %%eax, %%esp"::"a"(current_thread->stack));
+		__asm __volatile("mov %%eax, %%ebp"::"a"(current_thread->stack));
+		current_thread->f(current_thread->arg);
+		thread_exit();
+		return;
+	}
+	longjmp(current_thread->buf, 1);
 }
+
 void schedule(void)
 {
 	if (first_thread==NULL){

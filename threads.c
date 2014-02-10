@@ -94,8 +94,16 @@ void schedule(void)
 }
 void thread_exit(void)
 {
-
+	if (current_thread->prev!=NULL)
+		(current_thread->prev)->next=current_thread->next;
+	if (current_thread->next!=NULL)
+		(current_thread->next)->prev=current_thread->prev;
+	if (current_thread->prev==NULL)
+		first_thread=current_thread->next;
+	if (current_thread->next==NULL)
+		last_thread=current_thread->prev;
 }
+
 void thread_start_threading(void)
 {
 	current_thread=first_thread;

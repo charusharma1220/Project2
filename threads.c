@@ -5,9 +5,9 @@
  *      Author: Charu
  */
 #include "threads.h"
-#define NULL 0
 #include <setjmp.h>
 #define STACKSIZE 262144
+#define NULL 0
 
 struct thread{
 	int threadid;
@@ -22,13 +22,14 @@ struct thread{
 	struct thread* next;
 };
 
-typedef struct thread thread;
+typedef struct thread thread;   //Rename to something different?
 
 struct thread* first_thread=NULL;
 struct thread* last_thread=NULL;
 struct thread* current_thread=NULL;
 
-struct thread* thread_create(void (*f)(void *arg), void *arg){
+struct thread* thread_create(void (*f)(void *arg), void *arg)
+{
 	struct thread* newThread;
 	newThread=aligned_alloc(8, sizeof(thread));
         newThread->stack=aligned_alloc(8,STACKSIZE);
@@ -38,7 +39,8 @@ struct thread* thread_create(void (*f)(void *arg), void *arg){
 	newThread->f=f;
         return newThread;
 }
-void thread_add_runqueue(struct thread *t){
+void thread_add_runqueue(struct thread *t)
+{
 	if (first_thread==NULL){
 		first_thread=t;
 		last_thread=t;
@@ -49,8 +51,9 @@ void thread_add_runqueue(struct thread *t){
 		last_thread=t;
 	}
 }
-void thread_yield(void){
-	if (!set_jmp(current_thread->buf)){
+void thread_yield(void)
+{
+	if (!setjmp(current_thread->buf)){
 		__asm __volatile("mov %%esp, %%eax" : "=a" (current_thread->esp) : );
 		__asm __volatile("mov %%ebp, %%eax" : "=a" (current_thread->ebp) : );
 		schedule();
@@ -60,8 +63,12 @@ void thread_yield(void){
 		return;
 	}
 }
-void dispatch(void);
-void schedule(void){
+void dispatch(void)
+{
+
+}
+void schedule(void)
+{
 	if (first_thread==NULL){
 		printf("No more threads to schedule");
 		return;
@@ -72,12 +79,16 @@ void schedule(void){
 	}
 	current_thread=current_thread->next;
 }
-void thread_exit(void);
-void thread_start_threading(void){
+void thread_exit(void)
+{
+
+}
+void thread_start_threading(void)
+{
 	current_thread=first_thread;
 	if (current_thread==NULL){
 		printf("There are no threads to schedule.\n");
-		exit();
+		exit(0);
 	}
 	while (current_thread!=NULL)
 		dispatch();

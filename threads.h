@@ -10,6 +10,4 @@ void schedule(void);
 void thread_exit(void);
 void thread_start_threading(void);
 
-#endif // THREADS_Hding(void);
-
 #endif // THREADS_H

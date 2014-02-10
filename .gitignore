@@ -146,6 +146,7 @@ ClientBin/
 [Ss]tyle[Cc]op.*
 ~$*
 *~
+*.o
 *.dbmdl
 *.[Pp]ublish.xml
 *.pfx

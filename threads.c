@@ -5,9 +5,12 @@
  *      Author: Charu
  */
 #include "threads.h"
+#include <malloc.h>
+#include <stdio.h>
 #include <setjmp.h>
-#define STACKSIZE 262144
-#define NULL 0
+#define STACKSIZE 1024000
+
+int current_thread_number=0;
 
 struct thread{
 	int threadid;
@@ -22,7 +25,7 @@ struct thread{
 	struct thread* next;
 };
 
-typedef struct thread thread;   //Rename to something different?
+typedef struct thread Thread;   //Rename to something different?
 
 struct thread* first_thread=NULL;
 struct thread* last_thread=NULL;
@@ -31,14 +34,19 @@ struct thread* current_thread=NULL;
 struct thread* thread_create(void (*f)(void *arg), void *arg)
 {
 	struct thread* newThread;
-	newThread=aligned_alloc(8, sizeof(thread));
-        newThread->stack=aligned_alloc(8,STACKSIZE);
+	newThread=malloc(sizeof(Thread));
+    newThread->stack=malloc(STACKSIZE);
+	current_thread_number++;
+	newThread->threadid=current_thread_number;
+    newThread->esp=newThread->ebp=(unsigned char*)((int)(newThread->stack+STACKSIZE)&(0xFFFFFFF8));
 	newThread->prev = NULL;
 	newThread->next = NULL;
 	newThread->arg=arg;
+	newThread->first_time=1;
 	newThread->f=f;
-        return newThread;
+    return newThread;
 }
+
 void thread_add_runqueue(struct thread *t)
 {
 	if (first_thread==NULL){
@@ -51,33 +59,44 @@ void thread_add_runqueue(struct thread *t)
 		last_thread=t;
 	}
 }
+
 void thread_yield(void)
 {
+	printf("entered thread_yield\n");
 	if (!setjmp(current_thread->buf)){
+		printf("entering setjmp\n");
 		__asm __volatile("mov %%esp, %%eax" : "=a" (current_thread->esp) : );
 		__asm __volatile("mov %%ebp, %%eax" : "=a" (current_thread->ebp) : );
 		schedule();
 		dispatch();
 	}
 	else{
+		printf("long jump destination\n");
 		return;
 	}
 }
-void dispatch(void)
-{
+
+void dispatch(void){
+	printf("Dispatch the threads\n");
 	if (current_thread==NULL){
 		printf("No threads to dispatch");
 		exit(0);
 	}
+
 	if (current_thread->first_time){
+		printf("first time-dispatching\n");
 		current_thread->first_time=0;
-		__asm __volatile("mov %%eax, %%esp"::"a"(current_thread->stack));
-		__asm __volatile("mov %%eax, %%ebp"::"a"(current_thread->stack));
+		__asm __volatile("mov %%eax, %%esp" : : "a" (current_thread->esp) );
+		__asm __volatile("mov %%eax, %%ebp" : : "a" (current_thread->ebp) );
+		printf("saved registers\n");
 		current_thread->f(current_thread->arg);
 		thread_exit();
 		return;
 	}
+	printf("about to take long jump\n");
+	printf("threadid:%d\n",current_thread->threadid);
 	longjmp(current_thread->buf, 1);
+	printf("took long jump\n");
 }
 
 void schedule(void)
@@ -92,6 +111,7 @@ void schedule(void)
 	}
 	current_thread=current_thread->next;
 }
+
 void thread_exit(void)
 {
 	if (current_thread->prev!=NULL)
@@ -103,18 +123,18 @@ void thread_exit(void)
 	if (current_thread->next==NULL)
 		last_thread=current_thread->prev;
 	struct thread* saved_thread=current_thread;
+	schedule();
 	if (current_thread==NULL){
 		printf("All threads have terminated.\n");
 		exit(0);
 	}
 	current_thread->stack=(unsigned char*)(((int)current_thread->stack)-STACKSIZE);
 	free(saved_thread);
-	schedule();
 	dispatch();
 }
 
-void thread_start_threading(void)
-{
+void thread_start_threading(void){
+	printf("Starting threading\n");
 	current_thread=first_thread;
 	if (current_thread==NULL){
 		printf("There are no threads to schedule.\n");
@@ -123,4 +143,3 @@ void thread_start_threading(void)
 	while (current_thread!=NULL)
 		dispatch();
 }
-

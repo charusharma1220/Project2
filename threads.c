@@ -62,47 +62,48 @@ void thread_add_runqueue(struct thread *t)
 
 void thread_yield(void)
 {
-	printf("entered thread_yield\n");
+	//printf("entered thread_yield\n");
 	if (!setjmp(current_thread->buf)){
-		printf("entering setjmp\n");
+		//printf("entering setjmp\n");
 		__asm __volatile("mov %%esp, %%eax" : "=a" (current_thread->esp) : );
 		__asm __volatile("mov %%ebp, %%eax" : "=a" (current_thread->ebp) : );
 		schedule();
 		dispatch();
 	}
 	else{
-		printf("long jump destination\n");
+		//printf("long jump destination\n");
 		return;
 	}
 }
 
 void dispatch(void){
-	printf("Dispatch the threads\n");
+	//printf("Dispatch the threads\n");
 	if (current_thread==NULL){
-		printf("No threads to dispatch");
+		//printf("No threads to dispatch");
 		exit(0);
 	}
 
 	if (current_thread->first_time){
-		printf("first time-dispatching\n");
+		//printf("first time-dispatching\n");
 		current_thread->first_time=0;
 		__asm __volatile("mov %%eax, %%esp" : : "a" (current_thread->esp) );
 		__asm __volatile("mov %%eax, %%ebp" : : "a" (current_thread->ebp) );
-		printf("saved registers\n");
+		//printf("saved registers\n");
 		current_thread->f(current_thread->arg);
 		thread_exit();
 		return;
 	}
-	printf("about to take long jump\n");
-	printf("threadid:%d\n",current_thread->threadid);
+	//printf("about to take long jump\n");
+	//printf("threadid:%d\n",current_thread->threadid);
 	longjmp(current_thread->buf, 1);
-	printf("took long jump\n");
+	//printf("took long jump\n");
 }
 
 void schedule(void)
 {
 	if (first_thread==NULL){
-		printf("No more threads to schedule");
+		printf("No more threads to schedule\n");
+		current_thread=NULL;
 		return;
 	}
 	if (current_thread->next==NULL){
@@ -128,17 +129,16 @@ void thread_exit(void)
 		printf("All threads have terminated.\n");
 		exit(0);
 	}
-	current_thread->stack=(unsigned char*)(((int)current_thread->stack)-STACKSIZE);
 	free(saved_thread);
 	dispatch();
 }
 
 void thread_start_threading(void){
-	printf("Starting threading\n");
+	//printf("Starting threading\n");
 	current_thread=first_thread;
 	if (current_thread==NULL){
 		printf("There are no threads to schedule.\n");
-		exit(0);
+		return;
 	}
 	while (current_thread!=NULL)
 		dispatch();

@@ -26,6 +26,6 @@ threads.o: threads.c threads.h
 debug: Threads
 	${CC} -c ${CFLAGS} ${DEBUG_FLAGS} $(INCLUDE) main.c
 	${CC} -c ${CFLAGS} ${DEBUG_FLAGS} $(INCLUDE) threads.c
-	${CC} ${CFLAGS} $(INCLUDE) -o Threads $(allo) ${LIBDIR} ${LIBS}
+	${CC} ${CFLAGS} ${DEBUG_FLAGS} $(INCLUDE) -o Threads $(allo) ${LIBDIR} ${LIBS}
 clean: 
 	rm $(allo)

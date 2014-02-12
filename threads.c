@@ -1,4 +1,5 @@
-* threads.c
+/*
+ * threads.c
  *
  *  Created on: Feb 9, 2014
  *      Author: Charu
@@ -15,20 +16,20 @@ struct thread{
 	int threadid;
 	void *arg;
 	void (*f)(void *arg);
-	int first_time;
+	bool first_time;
 	unsigned char *esp;
 	unsigned char *ebp;
 	jmp_buf buf;
+        int env_set;
 	unsigned char* stack;
 	struct thread* prev;
 	struct thread* next;
 };
 
-typedef struct thread Thread;   //Rename to something different?
-
 struct thread* first_thread=NULL;
 struct thread* last_thread=NULL;
 struct thread* current_thread=NULL;
+struct thread* prev_thread=NULL;
 
 struct thread* thread_create(void (*f)(void *arg), void *arg)
 {
@@ -38,12 +39,11 @@ struct thread* thread_create(void (*f)(void *arg), void *arg)
 	current_thread_number++;
 	newThread->threadid=current_thread_number;
     newThread->esp=newThread->ebp=(unsigned char*)((int)(newThread->stack+STACKSIZE)&(0xFFFFFFF8));
-	printf("ESP value is %u\n",newThread->esp);
-	printf("EBP value is %u\n", newThread->ebp);
-    newThread->prev = NULL;
+    	newThread->env_set = 0;
+	newThread->prev = NULL;
 	newThread->next = NULL;
 	newThread->arg=arg;
-	newThread->first_time=1;
+	newThread->first_time=TRUE;
 	newThread->f=f;
     return newThread;
 }
@@ -61,56 +61,83 @@ void thread_add_runqueue(struct thread *t)
 	}
 }
 
+/*    suspends thread by saving current thread's context to struct thread, then calls
+ *  scheduler and dispatcher.  On the next call to thread_yield, process is returned 
+ *  from setjmp call and returns to the calling function.
+ */
 void thread_yield(void)
 {
-	//printf("entered thread_yield\n");
-	if (!setjmp(current_thread->buf)){
-		//printf("entering setjmp\n");
-		__asm __volatile("mov %%esp, %%eax" : "=a" (current_thread->esp) : );
-		__asm __volatile("mov %%ebp, %%eax" : "=a" (current_thread->ebp) : );
-		schedule();
-		dispatch();
-	}
-	else{
-		//printf("long jump destination\n");
-		return;
-	}
+	printf("entered thread_yield\n");
+        schedule();
+        dispatch();
+        printf("setjmp returning to thread %d.\n", current_thread->threadid);
+        return;
 }
 
+/*      prepares the scheduled thread for execution.
+ * goals:
+ *  - save sp & bp for last thread
+ *  - restore scheduled thread sp & bp
+ * note: might be helpful to think of current_thread as the next_thread to dispatch,
+ *     not the thread we are departing from.
+ */
 void dispatch(void){
-	//printf("Dispatch the threads\n");
+	printf("Dispatch the threads\n");
 	if (current_thread==NULL){
-		//printf("No threads to dispatch");
-		exit(0);
+		printf("No threads to dispatch");
+		return;
 	}
-
+        if (prev_thread != NULL) {
+                     // store sp and bp to register a to be saved by setjmp
+                printf("entering setjmp\n");
+                __asm __volatile("mov %%rsp, %%rax" : "=a" (current_thread->esp) : );
+                __asm __volatile("mov %%rbp, %%rax" : "=a" (current_thread->ebp) : );
+                prev_thread->env_set = setjmp(prev_thread->buf);//call to longjmp with env 
+                                                                //  will start here.
+                if (prev_thread->env_set){
+                        current_thread=previous_thread;//thread is returning from setjmp
+                }
+        }
+ 
+              //start running the thread's function if running for the first time
 	if (current_thread->first_time){
-		//printf("first time-dispatching\n");
-		current_thread->first_time=0;
-		__asm __volatile("mov %%eax, %%esp" : : "a" (current_thread->esp) );
-		__asm __volatile("mov %%eax, %%ebp" : : "a" (current_thread->ebp) );
-		//printf("saved registers\n");
+		printf("first time-dispatching\n");
+		current_thread->first_time=FALSE;
+		printf("saved registers\n");
 		current_thread->f(current_thread->arg);
 		thread_exit();
 		return;
 	}
-	//printf("about to take long jump\n");
-	//printf("threadid:%d\n",current_thread->threadid);
-	longjmp(current_thread->buf, 1);
-	//printf("took long jump\n");
+        else {   //thread is resuming next thread via longjmp
+                      // restore sp and bp (stored in register a)
+		__asm __volatile("mov %%rax, %%rsp" : : "a" (current_thread->esp) );
+		__asm __volatile("mov %%rax, %%rbp" : : "a" (current_thread->ebp) );
+		printf("restored registers\n");
+                if (!current_thread->env_set) // next thread is not returning from longjmp
+                        longjmp(current_thread->buf, 1);
+                else {
+                        current_thread->env_set = 0;  //reset current_thread's env_set
+                                                      //variable if returning from longjmp
+                }
+		return;
+	}
+
+	printf("about to take long jump\n");
+	printf("threadid:%d\n",current_thread->threadid);
+	printf("back from long jump\n");
 }
 
 void schedule(void)
 {
 	if (first_thread==NULL){
-		printf("No more threads to schedule\n");
-		current_thread=NULL;
+		printf("No more threads to schedule");
 		return;
 	}
 	if (current_thread->next==NULL){
 		current_thread=first_thread;
 		return;
 	}
+        prev_thread = current_thread;
 	current_thread=current_thread->next;
 }
 
@@ -130,16 +157,17 @@ void thread_exit(void)
 		printf("All threads have terminated.\n");
 		exit(0);
 	}
+	current_thread->stack=(unsigned char*)(((int)current_thread->stack)-STACKSIZE);
 	free(saved_thread);
 	dispatch();
 }
 
 void thread_start_threading(void){
-	//printf("Starting threading\n");
+	printf("Starting threading\n");
 	current_thread=first_thread;
 	if (current_thread==NULL){
 		printf("There are no threads to schedule.\n");
-		return;
+		exit(0);
 	}
 	while (current_thread!=NULL)
 		dispatch();

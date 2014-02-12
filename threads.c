@@ -1,5 +1,4 @@
-/*
- * threads.c
+* threads.c
  *
  *  Created on: Feb 9, 2014
  *      Author: Charu
@@ -39,7 +38,9 @@ struct thread* thread_create(void (*f)(void *arg), void *arg)
 	current_thread_number++;
 	newThread->threadid=current_thread_number;
     newThread->esp=newThread->ebp=(unsigned char*)((int)(newThread->stack+STACKSIZE)&(0xFFFFFFF8));
-	newThread->prev = NULL;
+	printf("ESP value is %u\n",newThread->esp);
+	printf("EBP value is %u\n", newThread->ebp);
+    newThread->prev = NULL;
 	newThread->next = NULL;
 	newThread->arg=arg;
 	newThread->first_time=1;

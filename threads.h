@@ -1,8 +1,16 @@
 #ifndef THREADS_H_
 #define THREADS_H_
 
+#ifndef Bool
+typedef int bool;
+#endif
+#define TRUE 1
+#define FALSE 0
+
 struct thread;
-struct thread *thread_create(void (*f)(void *arg), void *arg);
+typedef struct thread Thread;   
+
+Thread *thread_create(void (*f)(void *arg), void *arg);
 void thread_add_runqueue(struct thread *t);
 void thread_yield(void);
 void dispatch(void);
